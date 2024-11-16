@@ -1,0 +1,29 @@
+<div class="dashboard-container">
+
+  <!-- Loading spinner -->
+  <tds-spinner *ngIf="loading()" class="spinner"></tds-spinner>
+
+  <!-- User Info section -->
+  <tds-card *ngIf="user()" class="user-info-card">
+    <div class="user-info">
+
+      <!-- User's bio -->
+      <tds-text-field *ngIf="user()?.bio" size="m" class="bio">
+        {{ user()?.bio }}
+      </tds-text-field>
+
+      <!-- Followers and Following count -->
+      <div class="stats">
+        <tds-text-field size="m"><strong>Followers:</strong> {{ user()?.followers }}</tds-text-field>
+        <tds-text-field size="m"><strong>Following:</strong> {{ user()?.following }}</tds-text-field>
+      </div>
+    </div>
+  </tds-card>
+
+  <!-- Error message when user data is not loaded -->
+  <div *ngIf="!user() && !loading()">
+    <tds-message type="error" heading="Failed to load data">
+      We couldn't fetch your GitHub data. Please try again later.
+    </tds-message>
+  </div>
+</div>

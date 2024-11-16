@@ -1,14 +1,12 @@
 <div class="tds-u-flex tds-u-flex-dir-col tds-u-h-100">
   <!-- Header -->
-  <app-header></app-header>
+  <app-header *ngIf="isAuthenticated()"></app-header>
 
   <!-- Main Content -->
   <main class="tds-u-flex-1 tds-u-overflow-auto">
-    <div class="content">
-      <h1>Welcome to GitHub Insights</h1>
-    </div>
+    <router-outlet></router-outlet>
   </main>
 
   <!-- Footer -->
-  <app-footer class="tds-u-w-100"></app-footer>
+  <app-footer class="tds-u-w-100" *ngIf="isAuthenticated()"></app-footer>
 </div>

@@ -1,0 +1,10 @@
+<div class="sign-in-container">
+  <h1>Sign In</h1>
+  <form (ngSubmit)="signIn(username.value, token.value)">
+    <label for="username">GitHub Username:</label>
+    <input type="text" id="username" #username required>
+    <label for="token">GitHub PAT or OAuth Token:</label>
+    <input type="text" id="token" #token required>
+    <button type="submit">Sign In</button>
+  </form>
+</div>
