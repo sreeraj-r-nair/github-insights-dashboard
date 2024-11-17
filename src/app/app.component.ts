@@ -5,11 +5,13 @@ import { TegelModule } from '@scania/tegel-angular-17';
 import { HeaderComponent } from './layout/header/header.component';
 import { FooterComponent } from './layout/footer/footer.component';
 import { AuthService } from './core/services/auth.service';
+import { CookieService } from 'ngx-cookie-service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, RouterOutlet, TegelModule, HeaderComponent, FooterComponent],
+  providers: [CookieService],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
