@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 
 // Interface for GitHub user data
-interface GithubUser {
+export interface GithubUser {
   login: string;
   name: string;
   email: string;
