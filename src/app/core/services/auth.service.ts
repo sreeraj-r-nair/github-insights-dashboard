@@ -1,7 +1,8 @@
 import { Injectable, signal, WritableSignal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { CookieService } from 'ngx-cookie-service';
 
 // Interface for GitHub user data
 export interface GithubUser {
@@ -14,97 +15,65 @@ export interface GithubUser {
   providedIn: 'root',
 })
 export class AuthService {
-  // Reactive signals for token, authentication state, user data, and username
-  private token: WritableSignal<string | null> = signal(this.getLocalStorage('github_token'));
-  isAuthenticated = signal<boolean>(!!this.token());
-  user = signal<GithubUser | null>(this.getLocalStorage('github_user'));
-  username = signal<string | null>(this.getLocalStorage('github_username'));
+  private token: WritableSignal<string | null> = signal(null);
+  isAuthenticated = signal<boolean>(false);
+  user = signal<GithubUser | null>(null);
+  username = signal<string | null>(null);
 
-  constructor(private http: HttpClient) {
-    const token = this.getToken();
-    if (token && !this.user()) {
-      this.fetchUserData();
+  constructor(private http: HttpClient, private cookieService: CookieService) {
+    const token = this.getCookie('github_token');
+    const username = this.getCookie('github_username');
+    if (token && username) {
+      this.token.set(token);
+      this.username.set(username);
+      this.isAuthenticated.set(true);
+      this.fetchUserData().subscribe(); // Ensure user data is fetched if a token exists
     }
   }
 
-  /**
-   * Helper function to check if localStorage is available
-   */
-  private isLocalStorageAvailable(): boolean {
-    try {
-      const test = '__test__';
-      localStorage.setItem(test, test);
-      localStorage.removeItem(test);
-      return true;
-    } catch (e) {
-      return false;
+  private getCookie(key: string, isJson: boolean = false): any {
+    const storedValue = this.cookieService.get(key);
+    if (!storedValue) return null;
+
+    if (isJson) {
+      try {
+        return JSON.parse(storedValue);
+      } catch (error) {
+        console.error(`Error parsing ${key} from cookie:`, error);
+        return null;
+      }
     }
+
+    return storedValue;
   }
 
-  /**
-   * Helper function to get an item from localStorage
-   */
-  private getLocalStorage(key: string): any {
-    const storedValue = localStorage.getItem(key);
-  
-    if (!storedValue) {
-      return null;
-    }
-  
-    if (key === 'github_token') {
-      return storedValue;
-    }
-  
-    try {
-      return JSON.parse(storedValue);
-    } catch (error) {
-      console.error(`Error parsing ${key} from localStorage:`, error);
-      return null;
-    }
-  }
-
-  /**
-   * Helper function to set an item in localStorage
-   */
-  private setLocalStorage(key: string, value: any): void {
+  private setCookie(key: string, value: any): void {
+    const options = { expires: 1, secure: true, sameSite: 'Strict' as 'Strict' };
     if (value !== null && typeof value === 'object') {
-      localStorage.setItem(key, JSON.stringify(value));
+      this.cookieService.set(key, JSON.stringify(value), options);
     } else {
-      localStorage.setItem(key, value);
+      this.cookieService.set(key, value, options);
     }
   }
 
-  /**
-   * Helper function to remove an item from localStorage
-   */
-  private removeLocalStorage(key: string): void {
-    if (this.isLocalStorageAvailable()) {
-      localStorage.removeItem(key);
-    }
+  private removeCookie(key: string): void {
+    this.cookieService.delete(key, '/', 'Strict');
   }
 
-  /**
-   * Create authorization headers using the stored token.
-   */
   private getAuthHeaders(): HttpHeaders {
     const token = this.getToken();
-    if (!token) {
-      throw new Error('No token found');
-    }
+    if (!token) throw new Error('No token found');
     return new HttpHeaders({ Authorization: `token ${token}` });
   }
 
-  /**
-   * Get the current token as a signal value.
-   */
   getToken(): string | null {
     return this.token();
   }
 
-  /**
-   * Authenticate user with GitHub username and token.
-   * Updates signals on success.
-   */
+  getUsername(): string | null {
+    return this.username();
+  }
+
   authenticate(username: string, token: string): Observable<boolean> {
     if (!this.isTokenValid(token)) {
       return throwError(() => new Error('Invalid token format'));
@@ -114,142 +83,80 @@ export class AuthService {
     return this.http.get<GithubUser>(`https://api.github.com/users/${username}`, { headers }).pipe(
       map((data: GithubUser) => {
         this.token.set(token);
-        this.setLocalStorage('github_token', token);
+        this.username.set(username);
+        this.setCookie('github_token', token);
+        this.setCookie('github_username', username);
         this.isAuthenticated.set(true);
         this.user.set(data);
-        this.username.set(data.login);
-        this.setLocalStorage('github_user', data);
-        this.setLocalStorage('github_username', data.login);
+        this.setCookie('github_user', data);
         return true;
       }),
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Invalid token';
-        console.error('Authentication error:', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
-    );    
+      catchError((err) => this.handleError(err, 'Authentication error'))
+    );
   }
 
-  /**
-   * Authenticate user with OAuth token.
-   * Updates signals on success.
-   */
   authenticateWithOAuth(token: string): void {
-    if (!this.isTokenValid(token)) {
-      throw new Error('Invalid OAuth token format');
-    }
-
+    if (!this.isTokenValid(token)) throw new Error('Invalid OAuth token format');
     this.token.set(token);
-    this.setLocalStorage('github_token', token);
+    this.setCookie('github_token', token);
     this.isAuthenticated.set(true);
-    this.fetchUserData();
+    this.fetchUserData().subscribe(); // Re-fetch user data after authentication
   }
 
-  /**
-   * Log out the user, clear the token, and update the authentication state.
-   */
   logout(): void {
     this.token.set(null);
-    this.removeLocalStorage('github_token');
+    this.username.set(null);
+    this.removeCookie('github_token');
+    this.removeCookie('github_username');
     this.isAuthenticated.set(false);
     this.user.set(null);
-    this.username.set(null);
-    this.removeLocalStorage('github_user');
-    this.removeLocalStorage('github_username');
+    this.removeCookie('github_user');
   }
 
-  /**
-   * Fetch user data and update the user signal.
-   */
-  fetchUserData(): void {
+  fetchUserData(): Observable<GithubUser | null> {
     const token = this.getToken();
-    if (!token) {
-      return;
-    }
-    this.http.get<GithubUser>(`https://api.github.com/user`, { headers: this.getAuthHeaders() }).subscribe(
-      (data: GithubUser) => {
+    if (!token) return throwError(() => new Error('No token found'));
+
+    return this.http.get<GithubUser>(`https://api.github.com/user`, { headers: this.getAuthHeaders() }).pipe(
+      map((data: GithubUser) => {
         this.user.set(data);
-        this.username.set(data.login);
-        localStorage.setItem('github_user', JSON.stringify(data));
-        localStorage.setItem('github_username', data.login);
-      },
-      (error) => {
-        console.error('Error fetching user data', error);
-        this.user.set(null);
-      }
+        this.setCookie('github_user', data);
+        return data;
+      }),
+      catchError((error) => {
+        if (error.status === 401) {
+          console.log('Token expired or invalid. Logging out...');
+          this.logout();  // Call logout to clear invalid token
+          return throwError(() => new Error('Token expired, please log in again'));
+        }
+        return this.handleError(error, 'Error fetching user data');
+      })
     );
-    
   }
 
-  /**
-   * Fetch user data from GitHub API.
-   */
   getUserData(username: string): Observable<GithubUser> {
     return this.http.get<GithubUser>(`https://api.github.com/users/${username}`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Error fetching user data';
-        console.error('Error fetching user data', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
+      catchError((err) => this.handleError(err, 'Error fetching user data'))
     );
   }
 
-  /**
-   * Fetch user repositories from GitHub API.
-   */
-  getUserRepos(username: string): Observable<any> {
-    return this.http.get(`https://api.github.com/users/${username}/repos`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Error fetching user repositories';
-        console.error('Error fetching user repositories', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
-    );
-  }
-
-  /**
-   * Fetch repository commit activity from GitHub API.
-   */
-  getRepoCommitActivity(owner: string, repo: string): Observable<any> {
-    return this.http.get(`https://api.github.com/repos/${owner}/${repo}/stats/commit_activity`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Error fetching commit activity';
-        console.error('Error fetching commit activity', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
-    );
-  }
-
-  /**
-   * Fetch repository languages from GitHub API.
-   */
-  getRepoLanguages(owner: string, repo: string): Observable<any> {
-    return this.http.get(`https://api.github.com/repos/${owner}/${repo}/languages`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Error fetching repository languages';
-        console.error('Error fetching repository languages', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
-    );
-  }
-
-  /**
-   * Fetch repository commits from GitHub API.
-   */
-  getRepoCommits(owner: string, repo: string): Observable<any> {
-    return this.http.get(`https://api.github.com/repos/${owner}/${repo}/commits`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => {
-        const errorMessage = err.error.message || 'Error fetching repository commits';
-        console.error('Error fetching repository commits', errorMessage);
-        return throwError(() => new Error(errorMessage));
-      })
-    );
-  }
-
-  /**
-   * Validate the format of the token.
-   */
   private isTokenValid(token: string): boolean {
-    return /^[a-zA-Z0-9_-]{40}$/.test(token); // Simple validation for PAT format
+    return /^[a-zA-Z0-9_-]{40}$/.test(token); // Basic PAT token format validation
+  }
+
+  private handleError(error: HttpErrorResponse, context: string): Observable<never> {
+    const errorMessage = error.error?.message || `An error occurred during ${context}`;
+    if (error.status === 401) {
+      console.log('Token expired or invalid. Logging out...');
+      this.logout();  // Call logout to clear invalid token
+      return throwError(() => new Error('Token expired, please log in again'));
+    } else if (error.status === 404) {
+      console.error(`${context}: Not Found - ${errorMessage}`);
+    } else if (error.status === 500) {
+      console.error(`${context}: Server Error - ${errorMessage}`);
+    } else {
+      console.error(`${context}: ${errorMessage}`);
+    }
+    return throwError(() => new Error(errorMessage));
   }
 }
