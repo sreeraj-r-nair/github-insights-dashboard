@@ -1,0 +1,16 @@
+<div>
+  <h3>Languages Used</h3>
+  <div *ngIf="noDataMessage; else chartTemplate">
+    <p>{{ noDataMessage }}</p>
+  </div>
+  <ng-template #chartTemplate>
+    <ngx-charts-pie-chart
+      [view]="[700, 400]"
+      [scheme]="doughnutChartOptions.colorScheme"
+      [results]="languagesData"
+      [labels]="doughnutChartOptions.showLabels"
+      [doughnut]="doughnutChartOptions.doughnut"
+      [explodeSlices]="doughnutChartOptions.explodeSlices">
+    </ngx-charts-pie-chart>
+  </ng-template>
+</div>
