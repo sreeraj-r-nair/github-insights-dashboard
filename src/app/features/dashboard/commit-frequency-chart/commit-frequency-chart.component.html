@@ -1,0 +1,16 @@
+<div>
+  <h3>Commit Frequency</h3>
+  <ngx-charts-bar-vertical
+    [view]="[700, 400]"
+    [scheme]="barChartOptions.colorScheme"
+    [results]="barChartData"
+    [gradient]="barChartOptions.gradient"
+    [xAxis]="barChartOptions.showXAxis"
+    [yAxis]="barChartOptions.showYAxis"
+    [legend]="barChartOptions.showLegend"
+    [showXAxisLabel]="barChartOptions.showXAxisLabel"
+    [showYAxisLabel]="barChartOptions.showYAxisLabel"
+    [xAxisLabel]="barChartOptions.xAxisLabel"
+    [yAxisLabel]="barChartOptions.yAxisLabel">
+  </ngx-charts-bar-vertical>
+</div>
