@@ -1,5 +1,4 @@
 import { Component, OnInit, signal, WritableSignal } from '@angular/core';
-import { DashboardService } from '../../core/services/dashboard.service';
 import { AuthService } from '../../core/services/auth.service';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -17,7 +16,6 @@ export class DashboardComponent implements OnInit {
   loading: WritableSignal<boolean> = signal(true);
 
   constructor(
-    private dashboardService: DashboardService,
     private authService: AuthService,
     private router: Router
   ) {}
@@ -29,16 +27,23 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Fetch user data after authentication
-    this.dashboardService.getUserData(token).subscribe({
-      next: (data) => {
-        this.user.set(data);
-        this.loading.set(false);
-      },
-      error: (err) => {
-        console.error('Error fetching user data:', err);
-        this.loading.set(false);
-      },
-    });
+    const username = this.authService.username(); // Get the stored username
+
+    if (username) {
+      // Fetch user data after authentication
+      this.authService.getUserData(username).subscribe({
+        next: (data) => {
+          this.user.set(data);
+          this.loading.set(false);
+        },
+        error: (err) => {
+          console.error('Error fetching user data:', err);
+          this.loading.set(false);
+        },
+      });
+    } else {
+      console.error('Username is null');
+      this.loading.set(false);
+    }
   }
 }

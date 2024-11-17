@@ -1,10 +1,30 @@
 <div class="sign-in-container">
   <h1>Sign In</h1>
-  <form (ngSubmit)="signIn(username.value, token.value)">
-    <label for="username">GitHub Username:</label>
-    <input type="text" id="username" #username required>
-    <label for="token">GitHub PAT or OAuth Token:</label>
-    <input type="text" id="token" #token required>
-    <button type="submit">Sign In</button>
-  </form>
+  <!-- Default Option: OAuth -->
+  <button class="oauth-button" (click)="signInWithOAuth()">Sign In with GitHub</button>
+  
+  <!-- Advanced Option: PAT -->
+  <div class="pat-login">
+    <h3>Or Sign In with PAT</h3>
+    
+    <form [formGroup]="signInForm" (ngSubmit)="signInWithPAT()">
+      <!-- Username input for PAT login -->
+      <div class="form-group">
+        <input formControlName="username" placeholder="Enter your GitHub username" type="text" />
+        <div *ngIf="signInForm.get('username')?.invalid && signInForm.get('username')?.touched" class="error">
+          Username is required.
+        </div>
+      </div>
+
+      <!-- PAT input field -->
+      <div class="form-group">
+        <input formControlName="token" placeholder="Enter your Personal Access Token (PAT)" type="password" />
+        <div *ngIf="signInForm.get('token')?.invalid && signInForm.get('token')?.touched" class="error">
+          Personal Access Token is required.
+        </div>
+      </div>
+
+      <button type="submit" [disabled]="signInForm.invalid">Sign In</button>
+    </form>
+  </div>
 </div>

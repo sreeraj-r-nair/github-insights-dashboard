@@ -11,6 +11,30 @@ h1 {
   text-align: center;
 }
 
+.oauth-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.oauth-button:hover {
+  background-color: #0056b3;
+}
+
+.pat-login {
+  margin-top: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
 form {
   display: flex;
   flex-direction: column;
@@ -21,13 +45,15 @@ label {
 }
 
 input {
-  margin-bottom: 16px;
+  width: 100%;
   padding: 8px;
   border: 1px solid #ccc;
   border-radius: 4px;
+  margin-bottom: 8px;
 }
 
 button {
+  width: 100%;
   padding: 10px;
   background-color: #007bff;
   color: white;
@@ -36,6 +62,16 @@ button {
   cursor: pointer;
 }
 
-button:hover {
+button[disabled] {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:not([disabled]) {
   background-color: #0056b3;
+}
+
+.error {
+  color: red;
+  font-size: 12px;
 }
