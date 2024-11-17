@@ -32,6 +32,7 @@ describe('SignInComponent', () => {
 
     // Setup spy for authenticate method
     authService.authenticate.and.returnValue(of(true));
+  });
 
   it('should create the component', () => {
     expect(component).toBeTruthy();

@@ -70,6 +70,7 @@ describe('DashboardComponent', () => {
     authService.getToken.and.returnValue(null);
     
     component.ngOnInit();
+    fixture.detectChanges();
 
     expect(router.navigate).toHaveBeenCalledWith(['/sign-in']);
   });
@@ -78,7 +79,7 @@ describe('DashboardComponent', () => {
     authService.getToken.and.returnValue('valid-token');
     authService.username.and.returnValue(null);
 
-    component.ngOnInit();  // Call the method that loads the user data
+    component.ngOnInit();
     fixture.detectChanges();
 
     expect(component.user()).toBeNull();

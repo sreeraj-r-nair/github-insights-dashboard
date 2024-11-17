@@ -22,12 +22,18 @@
     "lib": [
       "ES2022",
       "dom"
-    ]
+    ],
+    "types": ["jasmine", "node"]
   },
   "angularCompilerOptions": {
-    "enableI18nLegacyMessageIdFormat": false,
+  "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true
-  }
+  },
+  "exclude": [
+    "cypress", 
+    "./cypress.config.ts", 
+    "**/*.cy.tsx"
+  ]
 }
