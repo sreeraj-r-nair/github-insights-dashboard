@@ -10,21 +10,21 @@
     <form [formGroup]="signInForm" (ngSubmit)="signInWithPAT()">
       <!-- Username input for PAT login -->
       <div class="form-group">
-        <input formControlName="username" placeholder="Enter your GitHub username" type="text" />
-        <div *ngIf="signInForm.get('username')?.invalid && signInForm.get('username')?.touched" class="error">
+        <input formControlName="username" placeholder="Enter your GitHub username" type="text" data-cy="username" />
+        <div *ngIf="signInForm.get('username')?.invalid && signInForm.get('username')?.touched" data-cy="username-error" class="error">
           Username is required.
         </div>
       </div>
 
       <!-- PAT input field -->
       <div class="form-group">
-        <input formControlName="token" placeholder="Enter your Personal Access Token (PAT)" type="password" />
-        <div *ngIf="signInForm.get('token')?.invalid && signInForm.get('token')?.touched" class="error">
+        <input formControlName="token" placeholder="Enter your Personal Access Token (PAT)" type="password" data-cy="password" />
+        <div *ngIf="signInForm.get('token')?.invalid && signInForm.get('token')?.touched" data-cy="password-error" class="error">
           Personal Access Token is required.
         </div>
       </div>
 
-      <button type="submit" [disabled]="signInForm.invalid">Sign In</button>
+      <button type="submit" [disabled]="signInForm.invalid" data-cy="login-button">Sign In</button>
     </form>
   </div>
 </div>

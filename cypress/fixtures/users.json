@@ -1,0 +1,10 @@
+{
+  "validUser": {
+      "username": "sreeraj-r-nair",
+      "password": "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"
+  },
+  "invalidUser": {
+      "username": "testUser",
+      "password": "wrongPassword"
+  }
+}
