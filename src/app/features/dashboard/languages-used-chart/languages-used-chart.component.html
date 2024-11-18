@@ -4,10 +4,9 @@
     <p>{{ noDataMessage }}</p>
   </div>
   <ng-template #chartTemplate>
-    <ngx-charts-advanced-pie-chart
-      [view]="[450, 400]"
-      [scheme]="advancedPieChartOptions.colorScheme"
-      [results]="languagesData">
-    </ngx-charts-advanced-pie-chart>
+    <app-pie-chart
+      [chartData]="chartData"
+      [chartLabels]="chartLabels">
+    </app-pie-chart>
   </ng-template>
 </div>

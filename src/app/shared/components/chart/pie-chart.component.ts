@@ -1,42 +1,44 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { Chart, ChartType } from 'chart.js';
+import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
 
 @Component({
   selector: 'app-pie-chart',
   standalone: true,
-  template: `<canvas id="pieChart" width="400" height="400"></canvas>`,
+  template: `
+    <ngx-charts-advanced-pie-chart
+      [view]="[450, 400]"
+      [scheme]="colorScheme"
+      [results]="chartData"
+      [gradient]="gradient">
+    </ngx-charts-advanced-pie-chart>
+  `,
+  imports: [NgxChartsModule]
 })
 export class PieChartComponent implements OnChanges {
-  @Input() chartData!: number[];
-  @Input() chartLabels!: string[];
+  @Input() chartData: any[] = [];
+  @Input() chartLabels: string[] = [];
+  @Input() showLabels: boolean = true;
+  @Input() isDoughnut: boolean = false;
+  @Input() showLegend: boolean = true;
 
-  chart: any;
+  colorScheme: Color = {
+    name: 'custom',
+    selectable: true,
+    group: ScaleType.Ordinal,
+    domain: ['#0f3263', '#ADD8E6', '#1E90FF', '#4682B4', '#5F9EA0', '#87CEEB', '#B0E0E6']
+  };
+  gradient: boolean = false;
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['chartData'] || changes['chartLabels']) {
-      this.createChart();
+      this.updateChartData();
     }
   }
 
-  createChart(): void {
-    if (this.chart) {
-      this.chart.destroy();
-    }
-
-    this.chart = new Chart('pieChart', {
-      type: 'pie' as ChartType,
-      data: {
-        labels: this.chartLabels,
-        datasets: [
-          {
-            data: this.chartData,
-            backgroundColor: ['#FF5733', '#33FF57', '#3357FF'],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-      },
-    });
+  updateChartData(): void {
+    this.chartData = this.chartLabels.map((label, index) => ({
+      name: label,
+      value: this.chartData[index]
+    }));
   }
 }

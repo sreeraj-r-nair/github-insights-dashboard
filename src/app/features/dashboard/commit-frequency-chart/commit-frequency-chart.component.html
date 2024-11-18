@@ -1,16 +1,14 @@
 <div>
   <h3>Commit count</h3>
-  <ngx-charts-bar-vertical
-    [view]="[450, 400]"
-    [scheme]="barChartOptions.colorScheme"
-    [results]="barChartData"
-    [gradient]="barChartOptions.gradient"
-    [xAxis]="barChartOptions.showXAxis"
-    [yAxis]="barChartOptions.showYAxis"
-    [legend]="false"
-    [showXAxisLabel]="barChartOptions.showXAxisLabel"
-    [showYAxisLabel]="barChartOptions.showYAxisLabel"
-    [xAxisLabel]="barChartOptions.xAxisLabel"
-    [yAxisLabel]="barChartOptions.yAxisLabel">
-  </ngx-charts-bar-vertical>
+  <div *ngIf="noDataMessage && !loading" class="error-message">
+    <p>{{ noDataMessage }}</p>
+  </div>
+
+  <div *ngIf="!loading && barChartData.length > 0">
+    <app-bar-chart 
+      [chartData]="barChartData" 
+      [chartLabels]="chartLabels"
+      [chartLabel]="'Commits'">
+    </app-bar-chart>
+  </div>
 </div>

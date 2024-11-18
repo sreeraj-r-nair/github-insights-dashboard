@@ -1,47 +1,59 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { Chart, ChartType } from 'chart.js';
+import { NgxChartsModule, Color, ScaleType } from '@swimlane/ngx-charts';
 
 @Component({
   selector: 'app-bar-chart',
   standalone: true,
-  template: `<canvas id="barChart" width="400" height="400"></canvas>`,
+  template: `
+    <ngx-charts-bar-vertical
+      [view]="[700, 400]"
+      [scheme]="colorScheme"
+      [results]="chartData"
+      [gradient]="gradient"
+      [xAxis]="showXAxis"
+      [yAxis]="showYAxis"
+      [legend]="false"
+      [showXAxisLabel]="showXAxisLabel"
+      [showYAxisLabel]="showYAxisLabel"
+      [xAxisLabel]="xAxisLabel"
+      [yAxisLabel]="yAxisLabel">
+    </ngx-charts-bar-vertical>
+  `,
+  imports: [NgxChartsModule]
 })
 export class BarChartComponent implements OnChanges {
-  @Input() chartData!: number[]; 
-  @Input() chartLabels!: string[];
+  @Input() chartData: any[] = [];
+  @Input() chartLabels: string[] = [];
   @Input() chartLabel: string = 'Data';
 
-  chart: any;
+  colorScheme: Color = {
+    name: 'custom',
+    selectable: true,
+    group: ScaleType.Ordinal,
+    domain: ['#0f3263', '#ADD8E6']
+  };
+  gradient: boolean = false;
+  showXAxis: boolean = true;
+  showYAxis: boolean = true;
+  showLegend: boolean = true;
+  showXAxisLabel: boolean = true;
+  showYAxisLabel: boolean = true;
+  xAxisLabel: string = 'Month';
+  yAxisLabel: string = 'Commits';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['chartData'] || changes['chartLabels']) {
-      this.createChart();
+      this.updateChartData();
     }
   }
+  
 
-  createChart(): void {
-    if (this.chart) {
-      this.chart.destroy();
+  updateChartData(): void {
+    if (this.chartLabels.length === this.chartData.length) {
+      this.chartData = this.chartData.map((data, index) => ({
+        name: this.chartLabels[index],
+        value: data.value
+      }));
     }
-
-    this.chart = new Chart('barChart', {
-      type: 'bar' as ChartType,
-      data: {
-        labels: this.chartLabels,
-        datasets: [
-          {
-            data: this.chartData,
-            label: this.chartLabel,
-            backgroundColor: 'rgba(0, 123, 255, 0.7)',
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        scales: {
-          yAxes: [{ ticks: { beginAtZero: true } }],
-        },
-      },
-    });
-  }
+  }  
 }

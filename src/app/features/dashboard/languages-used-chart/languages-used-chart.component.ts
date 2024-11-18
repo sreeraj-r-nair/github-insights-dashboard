@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { DashboardService } from '../../../core/services/dashboard.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { NgxChartsModule } from '@swimlane/ngx-charts';
+import { PieChartComponent } from '../../../shared/components/chart/pie-chart.component';
 import { CookieService } from 'ngx-cookie-service';
 import { forkJoin } from 'rxjs';
 
@@ -10,22 +10,17 @@ import { forkJoin } from 'rxjs';
   standalone: true,
   templateUrl: './languages-used-chart.component.html',
   styleUrls: ['./languages-used-chart.component.css'],
-  imports: [NgxChartsModule]
+  imports: [CommonModule, PieChartComponent]
 })
 export class LanguagesUsedChartComponent implements OnInit {
-  public advancedPieChartOptions: any = {
-    colorScheme: {
-      domain: ['#FF5733', '#33FF57', '#3357FF', '#FF33A1'] // Colors for each slice
-    }
-  };
-
   // Data to display in the chart
   public languagesData: any[] = [];
+  public chartData: any[] = [];
+  public chartLabels: string[] = [];
   public noDataMessage: string | null = null;
 
   constructor(
     private dashboardService: DashboardService,
-    private authService: AuthService, 
     private cookieService: CookieService,
     private cdr: ChangeDetectorRef
   ) {}
@@ -83,6 +78,8 @@ export class LanguagesUsedChartComponent implements OnInit {
             if (this.languagesData.length === 0) {
               this.noDataMessage = 'No languages data available.';
             } else {
+              this.chartData = this.languagesData.map(item => item.value);
+              this.chartLabels = this.languagesData.map(item => item.name);
               this.noDataMessage = null;  // Clear the message if data exists
             }
 

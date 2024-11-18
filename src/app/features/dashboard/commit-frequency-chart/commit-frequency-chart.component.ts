@@ -1,7 +1,8 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { DashboardService } from '../../../core/services/dashboard.service';
-import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { CookieService } from 'ngx-cookie-service';
+import { BarChartComponent } from '../../../shared/components/chart/bar-chart.component';
 import { forkJoin } from 'rxjs';
 import { SharedDataService } from '../../../core/services/shared-data.service';
 
@@ -10,24 +11,12 @@ import { SharedDataService } from '../../../core/services/shared-data.service';
   standalone: true,
   templateUrl: './commit-frequency-chart.component.html',
   styleUrls: ['./commit-frequency-chart.component.css'],
-  imports: [NgxChartsModule]
+  imports: [CommonModule, BarChartComponent]
 })
 export class CommitFrequencyChartComponent implements OnInit {
-  public barChartOptions: any = {
-    showXAxis: true,
-    showYAxis: true,
-    gradient: false,
-    showLegend: true,
-    showXAxisLabel: true,
-    xAxisLabel: 'Month',
-    showYAxisLabel: true,
-    yAxisLabel: 'Commits',
-    colorScheme: {
-    domain: ['#42A5F5']
-    }
-  };
 
   public barChartData: any[] = [];
+  public chartLabels: string[] = [];
   public noDataMessage: string | null = null;
   public loading: boolean = false;
   public totalCommits: number = 0;
@@ -129,6 +118,8 @@ export class CommitFrequencyChartComponent implements OnInit {
   private updateBarChartData(monthlyCommits: Map<string, number>): void {
     // Convert the map to an array for bar chart data
     this.barChartData = Array.from(monthlyCommits, ([name, value]) => ({ name, value }));
+    this.chartLabels = this.barChartData.map((item) => item.name);
+
     if (this.barChartData.length === 0) {
       this.noDataMessage = 'No commit activity data available.';
     } else {
