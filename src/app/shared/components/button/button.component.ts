@@ -1,7 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-button',
+  standalone: true,
   template: `
     <tds-button
       [type]="type"
@@ -15,7 +17,8 @@ import { Component, Input } from '@angular/core';
       <ng-content></ng-content>
     </tds-button>
   `,
-  styleUrls: ['./button.component.css'],
+  schemas: [CUSTOM_ELEMENTS_SCHEMA],
+  imports: [CommonModule]
 })
 export class ButtonComponent {
   @Input() type: 'button' | 'reset' | 'submit' = 'button';
