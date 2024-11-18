@@ -7,16 +7,18 @@
 .card-container {
   display: flex;
   gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .summary-card {
   flex: 1;
+  min-width: 150px;
   height: 150px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background-color: #f0f2f5;
-  border: #ccc; 
+  border: 1px #ccc; 
   padding: 1rem;
   text-align: left;
 }
@@ -31,4 +33,14 @@
   color: #0f3263; 
   font-weight: bold;
   margin-top: auto;
+}
+
+@media (max-width: 768px) {
+  .card-container {
+    flex-direction: column;
+  }
+
+  .summary-card {
+    width: 100%;
+  }
 }

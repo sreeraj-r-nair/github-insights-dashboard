@@ -1,5 +1,4 @@
 <div class="dashboard-container">
-
   <!-- Loading spinner -->
   <app-spinner *ngIf="loading()" [size]="'lg'" [variant]="'standard'"></app-spinner>
   
@@ -7,9 +6,13 @@
     <app-summary-tile></app-summary-tile>
   </div>
 
-  <div class="charts" *ngIf="!loading()">
-    <app-commit-frequency-chart></app-commit-frequency-chart>
-    <app-languages-used-chart></app-languages-used-chart>
+  <div class="charts-container" *ngIf="!loading()">
+    <div class="chart-box">
+      <app-commit-frequency-chart></app-commit-frequency-chart>
+    </div>
+    <div class="chart-box">
+      <app-languages-used-chart></app-languages-used-chart>
+    </div>
   </div>
   
   <!-- Error message when user data is not loaded -->

@@ -13,10 +13,7 @@ import { forkJoin } from 'rxjs';
   imports: [NgxChartsModule]
 })
 export class LanguagesUsedChartComponent implements OnInit {
-  public doughnutChartOptions: any = {
-    showLabels: true,
-    explodeSlices: false,
-    doughnut: true,
+  public advancedPieChartOptions: any = {
     colorScheme: {
       domain: ['#FF5733', '#33FF57', '#3357FF', '#FF33A1'] // Colors for each slice
     }
