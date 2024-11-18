@@ -29,6 +29,7 @@ export class CommitFrequencyChartComponent implements OnInit {
 
   public barChartData: any[] = [];
   public noDataMessage: string | null = null;
+  public loading: boolean = false;
 
   constructor(
     private dashboardService: DashboardService,
@@ -38,84 +39,104 @@ export class CommitFrequencyChartComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    // Retrieve the username from the cookies
+    this.loading = true;
     const username = this.cookieService.get('github_username');
 
     if (!username) {
-      console.error('No username found, please authenticate first');
-      this.noDataMessage = 'Please authenticate to view data.';
+      this.handleError('No username found, please authenticate first');
       return;
     }
 
-    // Fetch repositories for the user
+    this.fetchRepos(username);
+  }
+
+  private fetchRepos(username: string): void {
     this.dashboardService.getUserRepos(username).subscribe({
       next: (repos: any[]) => {
-        if (!Array.isArray(repos) || repos.length === 0) {
-          console.warn('No repositories found for the user.');
-          this.noDataMessage = 'No repositories found.';
+        if (!repos || repos.length === 0) {
+          this.handleError('No repositories found.');
           return;
         }
-
-        const monthlyCommits = new Map<string, number>();
-
-        // Create an array of observables for fetching commit activity for each repository
-        const commitRequests = repos.map(repo =>
-          this.dashboardService.getRepoCommitActivity(username, repo.name)
-        );
-
-        // Use forkJoin to wait for all commit requests to complete
-        forkJoin(commitRequests).subscribe({
-          next: (commitActivities: any[]) => {
-            commitActivities.forEach((data, index) => {
-              console.log(`Commit activity for Sree: ${repos[index].name}`, data);
-              if (!data || !data.weeks || !Array.isArray(data.weeks)) {
-                console.warn(`No commit activity data for repo: ${repos[index].name}`);
-                return; // Skip if no commit activity data is found for this repo
-              }              
-              console.log(`Commit activity for Repo: ${repos[index].name}`, data);
-
-              // Aggregate weekly data to monthly data
-              data.weeks.forEach((week: any) => {
-                const date = new Date(week.week * 1000); // Convert Unix timestamp to Date object
-                const month = date.toLocaleString('default', { month: 'short' });
-                const year = date.getFullYear(); 
-                const monthYear = `${month} ${year}`;
-
-                // Add weekly commit data to the corresponding month
-                const currentValue = monthlyCommits.get(monthYear) || 0;
-                monthlyCommits.set(monthYear, currentValue + week.total);
-              });
-            });
-
-            // Log the monthlyCommits map
-            console.log('Monthly Commits:', monthlyCommits);
-
-            // Convert the map to an array for bar chart data
-            this.barChartData = Array.from(monthlyCommits, ([name, value]) => ({ name, value }));
-
-            // Log the final barChartData
-            console.log('Final barChartData:', this.barChartData);
-
-            // Check if there is data to display
-            if (this.barChartData.length === 0) {
-              this.noDataMessage = 'No commit activity data available.';
-            } else {
-              this.noDataMessage = null;  // Clear the message if data exists
-            }
-
-            // Trigger change detection to update the chart
-            this.cdr.detectChanges();
-          },
-          error: (err: any) => {
-            console.error('Error fetching commit activity:', err);
-            this.noDataMessage = 'Error fetching commit activity data.';
-          }
-        });
+        this.fetchCommitData(username, repos);
       },
-      error: (err: any) => {
+      error: (err) => {
         console.error('Error fetching user repositories:', err);
-        this.noDataMessage = 'Error fetching repositories data.';
+        this.handleError('Error fetching repositories data.');
       }
     });
+  }
+
+  private fetchCommitData(username: string, repos: any[]): void {
+    const commitRequests = repos.map(repo => 
+      this.dashboardService.getRepoCommitActivity(username, repo.name)
+    );
+
+    forkJoin(commitRequests).subscribe({
+      next: (commitActivities: any[]) => {
+        this.processCommitActivities(commitActivities, repos);
+      },
+      error: (err) => {
+        console.error('Error fetching commit activity:', err);
+        this.handleError('Error fetching commit activity data.');
+      }
+    });
+  }
+
+  private processCommitActivities(commitActivities: any[], repos: any[]): void {
+    let monthlyCommits = new Map<string, number>(); // Map to store monthly commit totals
+
+    // Initialize all months in the current year with a commit count of 0
+    const currentYear = new Date().getFullYear();
+    const monthsOfYear = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+
+    monthsOfYear.forEach(month => {
+      const monthYear = `${month} ${currentYear}`;
+      monthlyCommits.set(monthYear, 0);  // Set all months to zero initially
+    });  
+
+    commitActivities.forEach((data, index) => {
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        console.warn(`No commit activity data for repo: ${repos[index].name}`);
+        return;
+      }
+
+      data.forEach((weekData: any) => {
+        if (weekData.total > 0) {
+          const date = new Date(weekData.week * 1000);
+          const month = date.toLocaleString('default', { month: 'short' });
+          const year = date.getFullYear();
+          const monthYear = `${month} ${year}`;
+
+          // Only update if the data is for the current year
+          if (year === currentYear) {
+            const currentValue = monthlyCommits.get(monthYear) || 0;
+            monthlyCommits.set(monthYear, currentValue + weekData.total);
+          }
+        }
+      });
+    });
+
+    this.updateBarChartData(monthlyCommits);
+  }
+
+  private updateBarChartData(monthlyCommits: Map<string, number>): void {
+    // Convert the map to an array for bar chart data
+    this.barChartData = Array.from(monthlyCommits, ([name, value]) => ({ name, value }));
+    if (this.barChartData.length === 0) {
+      this.noDataMessage = 'No commit activity data available.';
+    } else {
+      this.noDataMessage = null;  // Clear the message if data exists
+    }
+
+    this.loading = false;
+    this.cdr.detectChanges();
+  }
+
+  private handleError(message: string): void {
+    this.noDataMessage = message;
+    this.loading = false;
+    this.cdr.detectChanges();
   }
 }
