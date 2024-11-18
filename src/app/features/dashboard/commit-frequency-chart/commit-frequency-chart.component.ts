@@ -5,6 +5,7 @@ import { CookieService } from 'ngx-cookie-service';
 import { BarChartComponent } from '../../../shared/components/chart/bar-chart.component';
 import { forkJoin } from 'rxjs';
 import { SharedDataService } from '../../../core/services/shared-data.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-commit-frequency-chart',
@@ -25,7 +26,8 @@ export class CommitFrequencyChartComponent implements OnInit {
     private dashboardService: DashboardService,
     private cookieService: CookieService,
     private cdr: ChangeDetectorRef,
-    private sharedDataService: SharedDataService
+    private sharedDataService: SharedDataService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -36,6 +38,17 @@ export class CommitFrequencyChartComponent implements OnInit {
       this.handleError('No username found, please authenticate first');
       return;
     }
+
+    this.authService.fetchUserData().subscribe({
+      next: (user) => {
+        this.loading = false;
+        // Additional logic to handle user data
+      },
+      error: (err) => {
+        this.loading = false;
+        this.noDataMessage = 'Failed to load user data';
+      }
+    });
 
     this.fetchRepos(username);
   }

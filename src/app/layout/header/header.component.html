@@ -13,7 +13,7 @@
       />
       <tds-header-dropdown-list size="lg">
         <tds-header-dropdown-list-user
-          [header]="authService.user()?.name || 'User'"
+          [header]="authService.getUser()?.name || 'User'"
         ></tds-header-dropdown-list-user>
         <tds-header-dropdown-list-item>
           <button (click)="logout()">Logout</button>

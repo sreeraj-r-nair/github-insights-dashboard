@@ -27,5 +27,5 @@ export class HeaderComponent implements OnInit {
       // Trigger change detection after logout
       this.cdr.detectChanges();
     });
-    }
+  }
 }

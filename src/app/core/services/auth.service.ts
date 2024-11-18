@@ -17,18 +17,18 @@ export interface GithubUser {
 })
 export class AuthService {
   private token: WritableSignal<string | null> = signal(null);
-  isAuthenticated = signal<boolean>(false);
-  user = signal<GithubUser | null>(null);
-  username = signal<string | null>(null);
+  private isAuthenticatedSignal = signal<boolean>(false);
+  private userSignal = signal<GithubUser | null>(null);
+  private usernameSignal = signal<string | null>(null);
 
   constructor(private http: HttpClient, private cookieService: CookieService, private router: Router) {
     const token = this.getCookie('github_token');
     const username = this.getCookie('github_username');
   
-    if (token && username && this.isTokenValid(token)) {
+    if (token && username) {
       this.token.set(token);
-      this.username.set(username);
-      this.isAuthenticated.set(true);
+      this.usernameSignal.set(username);
+      this.isAuthenticatedSignal.set(true);
       this.fetchUserData().subscribe(); // Ensure user data is fetched if a valid token exists
     } else {
       // Clear stale cookies or invalid state
@@ -38,9 +38,9 @@ export class AuthService {
 
   private clearState(): void {
     this.token.set(null);
-    this.username.set(null);
-    this.isAuthenticated.set(false);
-    this.user.set(null);
+    this.usernameSignal.set(null);
+    this.isAuthenticatedSignal.set(false);
+    this.userSignal.set(null);
   
     this.removeCookie('github_token');
     this.removeCookie('github_username');
@@ -63,24 +63,54 @@ export class AuthService {
     return storedValue;
   }
 
-  private setCookie(key: string, value: any): void {
-    const options = { expires: 1, secure: true, sameSite: 'Strict' as 'Strict' };
-    if (value !== null && typeof value === 'object') {
-      this.cookieService.set(key, JSON.stringify(value), options);
-    } else {
-      this.cookieService.set(key, value, options);
-    }
-  }
-
   private removeCookie(key: string): void {
-    this.cookieService.delete(key, '/', window.location.hostname);
     this.cookieService.delete(key);
   }
 
-  private getAuthHeaders(): HttpHeaders {
-    const token = this.getToken();
-    if (!token) throw new Error('No token found');
-    return new HttpHeaders({ Authorization: `token ${token}` });
+  authenticate(username: string, token: string): Observable<boolean> {
+    this.token.set(token);
+    this.usernameSignal.set(username);
+
+    const headers = new HttpHeaders().set('Authorization', `token ${token}`);
+    return this.http.get<GithubUser>(`https://api.github.com/users/${username}`, { headers }).pipe(
+      map((user) => {
+        this.userSignal.set(user);
+        this.isAuthenticatedSignal.set(true);
+        this.cookieService.set('github_token', token);
+        this.cookieService.set('github_user', JSON.stringify(user));
+        this.cookieService.set('github_username', username);
+        return true;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        this.clearState();
+        return throwError(() => new Error('Invalid token format'));
+      })
+    );
+  }
+
+  fetchUserData(): Observable<GithubUser> {
+    const token = this.token();
+    if (!token) {
+      return throwError(() => new Error('No token found'));
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `token ${token}`);
+    return this.http.get<GithubUser>('https://api.github.com/user', { headers }).pipe(
+      map((user) => {
+        this.userSignal.set(user);
+        this.cookieService.set('github_user', JSON.stringify(user));
+        return user;
+      }),
+      catchError((error: HttpErrorResponse) => {
+        this.clearState();
+        return throwError(() => new Error('Token expired, please log in again'));
+      })
+    );
+  }
+
+  logout(): void {
+    this.clearState();
+    this.router.navigate(['/signin']);
   }
 
   getToken(): string | null {
@@ -88,99 +118,14 @@ export class AuthService {
   }
 
   getUsername(): string | null {
-    return this.username();
+    return this.usernameSignal();
   }
 
-  authenticate(username: string, token: string): Observable<boolean> {
-    if (!this.isTokenValid(token)) {
-      return throwError(() => new Error('Invalid token format'));
-    }
-
-    const headers = new HttpHeaders({ Authorization: `token ${token}` });
-    return this.http.get<GithubUser>(`https://api.github.com/users/${username}`, { headers }).pipe(
-      map((data: GithubUser) => {
-        this.token.set(token);
-        this.username.set(username);
-        this.setCookie('github_token', token);
-        this.setCookie('github_username', username);
-        this.isAuthenticated.set(true);
-        this.user.set(data);
-        this.setCookie('github_user', data);
-        return true;
-      }),
-      catchError((err) => this.handleError(err, 'Authentication error'))
-    );
+  isAuthenticated(): boolean {
+    return this.isAuthenticatedSignal();
   }
 
-  authenticateWithOAuth(token: string): void {
-    if (!this.isTokenValid(token)) throw new Error('Invalid OAuth token format');
-    this.token.set(token);
-    this.setCookie('github_token', token);
-    this.isAuthenticated.set(true);
-    this.fetchUserData().subscribe(); // Re-fetch user data after authentication
-  }
-
-  logout(): void {
-    // Clear all application states
-    this.token.set(null);
-    this.username.set(null);
-    this.isAuthenticated.set(false);
-    this.user.set(null);
-  
-    // Remove all relevant cookies
-    this.removeCookie('github_token');
-    this.removeCookie('github_username');
-    this.removeCookie('github_user');
-  
-    // Redirect to sign-in page after clearing state
-    this.router.navigate(['/signin']);
-  }
-  
-
-  fetchUserData(): Observable<GithubUser | null> {
-    const token = this.getToken();
-    if (!token) return throwError(() => new Error('No token found'));
-
-    return this.http.get<GithubUser>(`https://api.github.com/user`, { headers: this.getAuthHeaders() }).pipe(
-      map((data: GithubUser) => {
-        this.user.set(data);
-        this.setCookie('github_user', data);
-        return data;
-      }),
-      catchError((error) => {
-        if (error.status === 401) {
-          console.log('Token expired or invalid. Logging out...');
-          this.logout();  // Call logout to clear invalid token
-          return throwError(() => new Error('Token expired, please log in again'));
-        }
-        return this.handleError(error, 'Error fetching user data');
-      })
-    );
-  }
-
-  getUserData(username: string): Observable<GithubUser> {
-    return this.http.get<GithubUser>(`https://api.github.com/users/${username}`, { headers: this.getAuthHeaders() }).pipe(
-      catchError((err) => this.handleError(err, 'Error fetching user data'))
-    );
-  }
-
-  private isTokenValid(token: string): boolean {
-    return /^[a-zA-Z0-9_-]{40}$/.test(token); // Basic PAT token format validation
-  }
-
-  private handleError(error: HttpErrorResponse, context: string): Observable<never> {
-    const errorMessage = error.error?.message || `An error occurred during ${context}`;
-    if (error.status === 401) {
-      console.log('Token expired or invalid. Logging out...');
-      this.logout();  // Call logout to clear invalid token
-      return throwError(() => new Error('Token expired, please log in again'));
-    } else if (error.status === 404) {
-      console.error(`${context}: Not Found - ${errorMessage}`);
-    } else if (error.status === 500) {
-      console.error(`${context}: Server Error - ${errorMessage}`);
-    } else {
-      console.error(`${context}: ${errorMessage}`);
-    }
-    return throwError(() => new Error(errorMessage));
+  getUser(): GithubUser | null {
+    return this.userSignal();
   }
 }

@@ -46,7 +46,7 @@ export class DashboardService {
   }
 
   getUserData(username: string): Observable<GithubUser> {
-    return this.authService.getUserData(username);
+    return this.authService.fetchUserData();
   }
 
   // Fetch user summary (number of repos, followers, following)
