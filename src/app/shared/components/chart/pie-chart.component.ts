@@ -36,6 +36,16 @@ export class PieChartComponent implements OnChanges {
   }
 
   updateChartData(): void {
+    if (!this.chartData || !this.chartLabels) {
+      console.warn('chartData or chartLabels are not defined');
+      return;
+    }
+
+    if (this.chartData.length !== this.chartLabels.length) {
+      console.error('chartData and chartLabels must have the same length');
+      return;
+    }
+
     this.chartData = this.chartLabels.map((label, index) => ({
       name: label,
       value: this.chartData[index]
