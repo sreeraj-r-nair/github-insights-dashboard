@@ -1,20 +1,20 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
-import { ChartOptions, ChartData, ChartType } from 'chart.js';
-import { Chart } from 'chart.js';
+import { Chart, ChartType } from 'chart.js';
 
 @Component({
   selector: 'app-bar-chart',
+  standalone: true,
   template: `<canvas id="barChart" width="400" height="400"></canvas>`,
 })
 export class BarChartComponent implements OnChanges {
-  @Input() chartData!: any;
+  @Input() chartData!: number[]; 
   @Input() chartLabels!: string[];
   @Input() chartLabel: string = 'Data';
 
   chart: any;
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes.chartData || changes.chartLabels) {
+    if (changes['chartData'] || changes['chartLabels']) {
       this.createChart();
     }
   }
@@ -39,7 +39,7 @@ export class BarChartComponent implements OnChanges {
       options: {
         responsive: true,
         scales: {
-          y: { beginAtZero: true },
+          yAxes: [{ ticks: { beginAtZero: true } }],
         },
       },
     });
