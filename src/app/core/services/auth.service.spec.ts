@@ -1,28 +1,39 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from './auth.service';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { HttpHeaders } from '@angular/common/http';
+import { CookieService } from 'ngx-cookie-service';
+import { Router } from '@angular/router';
 
 describe('AuthService', () => {
   let service: AuthService;
   let httpMock: HttpTestingController;
+  let cookieService: CookieService;
+  let router: Router;
 
   const mockUser = { login: 'testUser', name: 'Test User', email: 'test@example.com' };
   const mockToken = 'mockGithubToken12345';
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
-      providers: [provideHttpClient()], 
+      providers: [
+        AuthService,
+        CookieService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } }
+      ]
     });
 
     service = TestBed.inject(AuthService);
     httpMock = TestBed.inject(HttpTestingController);
+    cookieService = TestBed.inject(CookieService);
+    router = TestBed.inject(Router);
   });
 
   afterEach(() => {
-    httpMock.verify(); // Ensure no unmatched HTTP requests remain
+    // Ensure no unmatched HTTP requests remain
+    httpMock.verify();
   });
 
   it('should be created', () => {
@@ -30,27 +41,25 @@ describe('AuthService', () => {
   });
 
   describe('authenticate', () => {
-    it('should authenticate user successfully and store data in localStorage', () => {
+    it('should authenticate user successfully and store data in cookies', () => {
       const username = 'testUser';
       const token = 'validToken12345';
 
-      spyOn(service as any, 'setLocalStorage').and.callThrough(); // Mock service's setLocalStorage method
-
       service.authenticate(username, token).subscribe((result) => {
         expect(result).toBeTrue();
-        expect(service.getToken()).toBe(token); // Ensure token is set correctly
-        expect(service.isAuthenticated()).toBeTrue(); // Ensure user is authenticated
-        expect(service.user()).toEqual(mockUser); // Ensure user data is set
-        expect(service.username()).toBe(username); // Ensure username is set
-        expect(service['setLocalStorage']).toHaveBeenCalledWith('github_token', token); // Ensure token is saved
-        expect(service['setLocalStorage']).toHaveBeenCalledWith('github_user', mockUser); // Ensure user data is saved
-        expect(service['setLocalStorage']).toHaveBeenCalledWith('github_username', username); // Ensure username is saved
+        expect(service.getToken()).toBe(token); 
+        expect(service.isAuthenticated()).toBeTrue(); 
+        expect(service.getUser()).toEqual(mockUser); 
+        expect(service.getUsername()).toBe(username); 
+        expect(cookieService.get('github_token')).toBe(token); 
+        expect(cookieService.get('github_user')).toBe(JSON.stringify(mockUser)); 
+        expect(cookieService.get('github_username')).toBe(username); 
       });
 
       // Simulate successful API response
-      const req = httpMock.expectOne(`https://api.github.com/users/${username}`);
+      const req = httpMock.expectOne((request) => request.url === `https://api.github.com/users/${username}`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockUser); // Simulate successful response
+      req.flush(mockUser);
     });
 
     it('should handle error when authentication fails', () => {
@@ -60,94 +69,65 @@ describe('AuthService', () => {
       service.authenticate(username, token).subscribe({
         next: () => fail('should have failed with error'),
         error: (error) => {
-          expect(error.message).toBe('Invalid token');
-          expect(service.isAuthenticated()).toBeFalse(); // Ensure user is not authenticated
-          expect(service.user()).toBeNull(); // Ensure user data is not set
-          expect(service.username()).toBeNull(); // Ensure username is not set
+          expect(error.message).toBe('Invalid token format');
+          expect(service.isAuthenticated()).toBeFalse();
+          expect(service.getUser()).toBeNull(); // Ensure user data is not set
+          expect(service.getUsername()).toBeNull(); // Ensure username is not set
         }
       });
 
       // Simulate failed API response
-      const req = httpMock.expectOne(`https://api.github.com/users/${username}`);
+      const req = httpMock.expectOne((request) => request.url === `https://api.github.com/users/${username}`);
       expect(req.request.method).toBe('GET');
       req.flush({ message: 'Invalid token' }, { status: 401, statusText: 'Unauthorized' });
     });
   });
 
   describe('logout', () => {
-    it('should clear token and user data from signals and localStorage', () => {
-      spyOn(service as any, 'removeLocalStorage').and.callThrough(); // Mock service's removeLocalStorage method
-
+    it('should clear all states and navigate to sign-in page', () => {
       service.logout();
-
-      expect(service.getToken()).toBeNull(); // Ensure token is cleared
-      expect(service.isAuthenticated()).toBeFalse(); // Ensure user is logged out
-      expect(service.user()).toBeNull(); // Ensure user data is cleared
-      expect(service.username()).toBeNull(); // Ensure username is cleared
-      expect(service['removeLocalStorage']).toHaveBeenCalledWith('github_token'); // Ensure token is removed
-      expect(service['removeLocalStorage']).toHaveBeenCalledWith('github_user'); // Ensure user data is removed
-      expect(service['removeLocalStorage']).toHaveBeenCalledWith('github_username'); // Ensure username is removed
+      expect(service.getToken()).toBeNull();
+      expect(service.isAuthenticated()).toBeFalse();
+      expect(service.getUser()).toBeNull();
+      expect(service.getUsername()).toBeNull();
+      expect(cookieService.get('github_token')).toBe('');
+      expect(cookieService.get('github_user')).toBe('');
+      expect(cookieService.get('github_username')).toBe('');
+      expect(router.navigate).toHaveBeenCalledWith(['/signin']);
     });
   });
 
   describe('fetchUserData', () => {
-    it('should fetch user data and update signals on success', () => {
-      spyOn(service as any, 'setLocalStorage').and.callThrough(); // Mock service's setLocalStorage method
-
-      service.fetchUserData();
+    it('should fetch user data successfully', () => {
+      service['token'].set(mockToken);
+      service.fetchUserData().subscribe((data) => {
+        expect(data).toEqual(mockUser);
+        expect(service.getUser()).toEqual(mockUser);
+        expect(cookieService.get('github_user')).toBe(JSON.stringify(mockUser));
+      });
 
       // Simulate successful API response
-      const req = httpMock.expectOne('https://api.github.com/user');
+      const req = httpMock.expectOne(`https://api.github.com/user`);
       expect(req.request.method).toBe('GET');
-      req.flush(mockUser); // Simulate successful response
-
-      expect(service.user()).toEqual(mockUser); // Ensure user data is updated
-      expect(service.username()).toBe(mockUser.login); // Ensure username is updated
-      expect(service['setLocalStorage']).toHaveBeenCalledWith('github_user', mockUser); // Ensure user data is saved
-      expect(service['setLocalStorage']).toHaveBeenCalledWith('github_username', mockUser.login); // Ensure username is saved
+      req.flush(mockUser);
     });
 
     it('should handle error when fetching user data fails', () => {
-      service.fetchUserData();
-
-      // Simulate failed API response
-      const req = httpMock.expectOne('https://api.github.com/user');
-      expect(req.request.method).toBe('GET');
-      req.flush('Error fetching user data', { status: 500, statusText: 'Internal Server Error' });
-
-      expect(service.user()).toBeNull(); // Ensure user data is not updated
-      expect(service.username()).toBeNull(); // Ensure username is not updated
-    });
-  });
-
-  describe('getUserData', () => {
-    it('should fetch specific user data', () => {
-      const username = 'testUser';
-      spyOn(service as any, 'getAuthHeaders').and.returnValue(new HttpHeaders()); // Mock auth headers
-
-      service.getUserData(username).subscribe((data) => {
-        expect(data).toEqual(mockUser);
-      });
-
-      const req = httpMock.expectOne(`https://api.github.com/users/${username}`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockUser); // Simulate successful response
-    });
-
-    it('should handle error when fetching specific user data fails', () => {
-      const username = 'testUser';
-      spyOn(service as any, 'getAuthHeaders').and.returnValue(new HttpHeaders()); // Mock auth headers
-
-      service.getUserData(username).subscribe({
+      service['token'].set(mockToken);
+      service.fetchUserData().subscribe({
         next: () => fail('should have failed with error'),
         error: (error) => {
-          expect(error.message).toBe('Error fetching user data');
+          expect(error.message).toBe('Token expired, please log in again');
+          expect(service.isAuthenticated()).toBeFalse();
+          expect(service.getUser()).toBeNull();
+          expect(service.getUsername()).toBeNull();
         }
       });
 
-      const req = httpMock.expectOne(`https://api.github.com/users/${username}`);
+      // Simulate failed API response
+      const req = httpMock.expectOne(`https://api.github.com/user`);
       expect(req.request.method).toBe('GET');
-      req.flush('Error fetching user data', { status: 500, statusText: 'Internal Server Error' });
+      req.flush({ message: 'Token expired' }, { status: 401, statusText: 'Unauthorized' });
     });
   });
 });

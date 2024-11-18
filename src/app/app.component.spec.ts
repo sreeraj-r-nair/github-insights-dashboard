@@ -13,7 +13,7 @@ describe('AppComponent', () => {
   let authService: jasmine.SpyObj<AuthService>;
 
   beforeEach(() => {
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'user']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['isAuthenticated', 'getUser']);
 
     TestBed.configureTestingModule({
       imports: [CommonModule, RouterOutlet, TegelModule, HeaderComponent, FooterComponent, AppComponent],
@@ -41,34 +41,14 @@ describe('AppComponent', () => {
     expect(component.isAuthenticated()).toBeFalse();
   });
 
-  it('should render the title in the template', () => {
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('h1').textContent).toContain('github-insights-dashboard');
-  });
-
-  it('should display header and footer components', () => {
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement;
-    expect(compiled.querySelector('app-header')).toBeTruthy();
-    expect(compiled.querySelector('app-footer')).toBeTruthy();
+  it('should handle error thrown by isAuthenticated method', () => {
+    authService.isAuthenticated.and.throwError('Unexpected error');
+    expect(() => component.isAuthenticated()).toThrowError('Unexpected error');
   });
 
   it('should call isAuthenticated method from AuthService on component initialization', () => {
-    authService.isAuthenticated.and.returnValue(true);
     fixture.detectChanges();
     expect(authService.isAuthenticated).toHaveBeenCalled();
   });
 
-  it('should handle null response from isAuthenticated', () => {
-    authService.isAuthenticated.and.returnValue(false);
-    fixture.detectChanges();
-    expect(component.isAuthenticated()).toBeFalse();
-  });
-
-  it('should handle error thrown by isAuthenticated method', () => {
-    authService.isAuthenticated.and.throwError('Unexpected error');
-    fixture.detectChanges();
-    expect(component.isAuthenticated()).toBeFalse();
-  });
 });

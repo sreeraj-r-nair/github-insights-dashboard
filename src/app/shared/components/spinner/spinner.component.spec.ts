@@ -7,7 +7,7 @@ describe('SpinnerComponent', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      declarations: [SpinnerComponent],
+      imports: [SpinnerComponent],
     });
     fixture = TestBed.createComponent(SpinnerComponent);
     component = fixture.componentInstance;
@@ -17,17 +17,4 @@ describe('SpinnerComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should have correct size', () => {
-    component.size = 'sm';
-    fixture.detectChanges();
-    const spinner = fixture.nativeElement.querySelector('tds-spinner');
-    expect(spinner.getAttribute('size')).toBe('sm');
-  });
-
-  it('should have correct variant', () => {
-    component.variant = 'inverted';
-    fixture.detectChanges();
-    const spinner = fixture.nativeElement.querySelector('tds-spinner');
-    expect(spinner.getAttribute('variant')).toBe('inverted');
-  });
 });

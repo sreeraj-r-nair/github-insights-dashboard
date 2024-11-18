@@ -1,39 +1,52 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardComponent } from './dashboard.component';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
-import { RouterModule } from '@angular/router';
-import { of, throwError } from 'rxjs';
-import { AuthService } from '../../core/services/auth.service';
+import { AuthService, GithubUser } from '../../core/services/auth.service';
+import { DashboardService } from '../../core/services/dashboard.service';
 import { Router } from '@angular/router';
-import { GithubUser } from '../../core/services/auth.service';
+import { CommonModule } from '@angular/common';
+import { SpinnerComponent } from '../../shared/components/spinner/spinner.component';
+import { CommitFrequencyChartComponent } from '../dashboard/commit-frequency-chart/commit-frequency-chart.component';
+import { LanguagesUsedChartComponent } from '../dashboard/languages-used-chart/languages-used-chart.component';
+import { SummaryTileComponent } from '../dashboard/summary-tile/summary-tile.component';
+import { TegelModule } from '@scania/tegel-angular-17';
+import { of, throwError } from 'rxjs';
 
 describe('DashboardComponent', () => {
   let component: DashboardComponent;
   let fixture: ComponentFixture<DashboardComponent>;
   let authService: jasmine.SpyObj<AuthService>;
+  let dashboardService: jasmine.SpyObj<DashboardService>;
   let router: jasmine.SpyObj<Router>;
 
+  const mockUser: GithubUser = { login: 'john_doe', name: 'John Doe', email: 'john.doe@example.com' };
+
   beforeEach(async () => {
-    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getToken', 'username', 'getUserData']);
+    const authServiceSpy = jasmine.createSpyObj('AuthService', ['getToken', 'getUsername', 'getUserData']);
+    const dashboardServiceSpy = jasmine.createSpyObj('DashboardService', ['getUserData', 'getUserSummary', 'getUserRepos', 'getRepoCommitActivity', 'getRepoLanguages']);
     const routerSpy = jasmine.createSpyObj('Router', ['navigate']);
 
     await TestBed.configureTestingModule({
       imports: [
+        CommonModule,
+        TegelModule,
+        SpinnerComponent,
+        CommitFrequencyChartComponent,
+        LanguagesUsedChartComponent,
+        SummaryTileComponent,
         DashboardComponent,
-        RouterModule.forRoot([])
       ],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: Router, useValue: routerSpy },
-        provideHttpClient(withInterceptorsFromDi())
+        { provide: DashboardService, useValue: dashboardServiceSpy },
+        { provide: Router, useValue: routerSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(DashboardComponent);
     component = fixture.componentInstance;
     authService = TestBed.inject(AuthService) as jasmine.SpyObj<AuthService>;
+    dashboardService = TestBed.inject(DashboardService) as jasmine.SpyObj<DashboardService>;
     router = TestBed.inject(Router) as jasmine.SpyObj<Router>;
-    fixture.detectChanges();
   });
 
   it('should create the component', () => {
@@ -41,10 +54,9 @@ describe('DashboardComponent', () => {
   });
 
   it('should load user data successfully', () => {
-    const mockUser: GithubUser = { login: 'john_doe', name: 'John Doe', email: 'john.doe@example.com' };
     authService.getToken.and.returnValue('valid-token');
-    authService.username.and.returnValue('john_doe');
-    authService.getUserData.and.returnValue(of(mockUser));
+    authService.getUsername.and.returnValue('john_doe');
+    dashboardService.getUserData.and.returnValue(of(mockUser));
 
     component.ngOnInit();
     fixture.detectChanges();
@@ -56,8 +68,8 @@ describe('DashboardComponent', () => {
   it('should display error message when user data is not available', () => {
     const errorMessage = 'Failed to load user data';
     authService.getToken.and.returnValue('valid-token');
-    authService.username.and.returnValue('john_doe');
-    authService.getUserData.and.returnValue(throwError(() => new Error(errorMessage)));
+    authService.getUsername.and.returnValue('john_doe');
+    dashboardService.getUserData.and.returnValue(throwError(() => new Error(errorMessage)));
 
     component.ngOnInit();
     fixture.detectChanges();
@@ -77,7 +89,7 @@ describe('DashboardComponent', () => {
 
   it('should handle null username', () => {
     authService.getToken.and.returnValue('valid-token');
-    authService.username.and.returnValue(null);
+    authService.getUsername.and.returnValue(null);
 
     component.ngOnInit();
     fixture.detectChanges();

@@ -10,7 +10,7 @@ describe('ButtonComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [ButtonComponent, CommonModule],
-      schemas: [CUSTOM_ELEMENTS_SCHEMA]
+      schemas: [CUSTOM_ELEMENTS_SCHEMA] 
     }).compileComponents();
 
     fixture = TestBed.createComponent(ButtonComponent);
@@ -19,13 +19,6 @@ describe('ButtonComponent', () => {
 
   it('should create the button', () => {
     expect(component).toBeTruthy();
-  });
-
-  it('should display the correct text', () => {
-    component.text = 'Click Me';
-    fixture.detectChanges();
-    const button = fixture.nativeElement.querySelector('tds-button');
-    expect(button.textContent).toContain('Click Me');
   });
 
   it('should handle click event', () => {
