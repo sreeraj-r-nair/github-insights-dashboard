@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { CookieService } from 'ngx-cookie-service';
+import { Router } from '@angular/router';
 
 // Interface for GitHub user data
 export interface GithubUser {
@@ -20,16 +21,31 @@ export class AuthService {
   user = signal<GithubUser | null>(null);
   username = signal<string | null>(null);
 
-  constructor(private http: HttpClient, private cookieService: CookieService) {
+  constructor(private http: HttpClient, private cookieService: CookieService, private router: Router) {
     const token = this.getCookie('github_token');
     const username = this.getCookie('github_username');
-    if (token && username) {
+  
+    if (token && username && this.isTokenValid(token)) {
       this.token.set(token);
       this.username.set(username);
       this.isAuthenticated.set(true);
-      this.fetchUserData().subscribe(); // Ensure user data is fetched if a token exists
+      this.fetchUserData().subscribe(); // Ensure user data is fetched if a valid token exists
+    } else {
+      // Clear stale cookies or invalid state
+      this.clearState();
     }
   }
+
+  private clearState(): void {
+    this.token.set(null);
+    this.username.set(null);
+    this.isAuthenticated.set(false);
+    this.user.set(null);
+  
+    this.removeCookie('github_token');
+    this.removeCookie('github_username');
+    this.removeCookie('github_user');
+  }  
 
   private getCookie(key: string, isJson: boolean = false): any {
     const storedValue = this.cookieService.get(key);
@@ -57,7 +73,8 @@ export class AuthService {
   }
 
   private removeCookie(key: string): void {
-    this.cookieService.delete(key, '/', 'Strict');
+    this.cookieService.delete(key, '/', window.location.hostname);
+    this.cookieService.delete(key);
   }
 
   private getAuthHeaders(): HttpHeaders {
@@ -104,14 +121,21 @@ export class AuthService {
   }
 
   logout(): void {
+    // Clear all application states
     this.token.set(null);
     this.username.set(null);
-    this.removeCookie('github_token');
-    this.removeCookie('github_username');
     this.isAuthenticated.set(false);
     this.user.set(null);
+  
+    // Remove all relevant cookies
+    this.removeCookie('github_token');
+    this.removeCookie('github_username');
     this.removeCookie('github_user');
+  
+    // Redirect to sign-in page after clearing state
+    this.router.navigate(['/signin']);
   }
+  
 
   fetchUserData(): Observable<GithubUser | null> {
     const token = this.getToken();
