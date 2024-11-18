@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { CookieService } from 'ngx-cookie-service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-summary-tile',
   standalone: true,
   templateUrl: './summary-tile.component.html',
   styleUrls: ['./summary-tile.component.css'],
-  providers: [CookieService]
+  providers: [CookieService],
+  imports: [CommonModule], 
 })
 export class SummaryTileComponent implements OnInit {
   // Define the properties that will be used to display the summary information

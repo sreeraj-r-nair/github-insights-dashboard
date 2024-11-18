@@ -1,6 +1,17 @@
 <div class="summary-tile">
   <h4>User Summary</h4>
-  <p>Projects: {{ projectCount }}</p>
-  <p>Followers: {{ followers }}</p>
-  <p>Following: {{ following }}</p>
+  <div class="card-container">
+    <div class="summary-card">
+      <div class="header">Projects</div>
+      <div class="count">{{ projectCount }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="header">Followers</div>
+      <div class="count">{{ followers }}</div>
+    </div>
+    <div class="summary-card">
+      <div class="header">Following</div>
+      <div class="count">{{ following }}</div>
+    </div>
+  </div>
 </div>
