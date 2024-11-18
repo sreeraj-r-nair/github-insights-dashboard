@@ -1,9 +1,9 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { DashboardService } from '../../../core/services/dashboard.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { NgxChartsModule } from '@swimlane/ngx-charts';
 import { CookieService } from 'ngx-cookie-service';
 import { forkJoin } from 'rxjs';
+import { SharedDataService } from '../../../core/services/shared-data.service';
 
 @Component({
   selector: 'app-commit-frequency-chart',
@@ -23,19 +23,20 @@ export class CommitFrequencyChartComponent implements OnInit {
     showYAxisLabel: true,
     yAxisLabel: 'Commits',
     colorScheme: {
-      domain: ['#42A5F5']
+    domain: ['#42A5F5']
     }
   };
 
   public barChartData: any[] = [];
   public noDataMessage: string | null = null;
   public loading: boolean = false;
+  public totalCommits: number = 0;
 
   constructor(
     private dashboardService: DashboardService,
-    private authService: AuthService,
-    private cookieService: CookieService, 
-    private cdr: ChangeDetectorRef
+    private cookieService: CookieService,
+    private cdr: ChangeDetectorRef,
+    private sharedDataService: SharedDataService
   ) {}
 
   ngOnInit(): void {
@@ -84,6 +85,7 @@ export class CommitFrequencyChartComponent implements OnInit {
 
   private processCommitActivities(commitActivities: any[], repos: any[]): void {
     let monthlyCommits = new Map<string, number>(); // Map to store monthly commit totals
+    let totalCommits = 0;
 
     // Initialize all months in the current year with a commit count of 0
     const currentYear = new Date().getFullYear();
@@ -113,11 +115,14 @@ export class CommitFrequencyChartComponent implements OnInit {
           if (year === currentYear) {
             const currentValue = monthlyCommits.get(monthYear) || 0;
             monthlyCommits.set(monthYear, currentValue + weekData.total);
+            totalCommits += weekData.total;
           }
         }
       });
     });
 
+    this.totalCommits = totalCommits;
+    this.sharedDataService.setTotalCommits(totalCommits); // Emit the total commits to the shared service
     this.updateBarChartData(monthlyCommits);
   }
 
