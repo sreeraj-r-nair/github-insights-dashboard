@@ -1,11 +1,12 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { CookieService } from 'ngx-cookie-service';
 import { BarChartComponent } from '../../../shared/components/chart/bar-chart.component';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { SharedDataService } from '../../../core/services/shared-data.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 
 @Component({
   selector: 'app-commit-frequency-chart',
@@ -14,7 +15,7 @@ import { AuthService } from '../../../core/services/auth.service';
   styleUrls: ['./commit-frequency-chart.component.css'],
   imports: [CommonModule, BarChartComponent]
 })
-export class CommitFrequencyChartComponent implements OnInit {
+export class CommitFrequencyChartComponent implements OnInit, OnDestroy {
 
   public barChartData: any[] = [];
   public chartLabels: string[] = [];
@@ -22,12 +23,15 @@ export class CommitFrequencyChartComponent implements OnInit {
   public loading: boolean = false;
   public totalCommits: number = 0;
 
+  private refreshSubscription: Subscription = new Subscription(); // Subscription for auto-refresh
+
   constructor(
     private dashboardService: DashboardService,
     private cookieService: CookieService,
     private cdr: ChangeDetectorRef,
     private sharedDataService: SharedDataService,
-    private authService: AuthService
+    private authService: AuthService,
+    private autoRefreshService: AutoRefreshService // Inject the AutoRefreshService
   ) {}
 
   ngOnInit(): void {
@@ -39,17 +43,17 @@ export class CommitFrequencyChartComponent implements OnInit {
       return;
     }
 
-    this.authService.fetchUserData().subscribe({
-      next: (user) => {
-        this.loading = false;
-        // Additional logic to handle user data
-      },
-      error: (err) => {
-        this.loading = false;
-        this.noDataMessage = 'Failed to load user data';
-      }
-    });
+    // Fetch initial data
+    this.fetchRepos(username);
 
+    // Subscribe to auto-refresh events from AutoRefreshService
+    this.refreshSubscription = this.autoRefreshService.refresh$.subscribe(() => {
+      this.refreshData(username); // Trigger data refresh when auto-refresh event is emitted
+    });
+  }
+
+  private refreshData(username: string): void {
+    // Re-fetch the repository and commit data
     this.fetchRepos(username);
   }
 
@@ -147,5 +151,9 @@ export class CommitFrequencyChartComponent implements OnInit {
     this.noDataMessage = message;
     this.loading = false;
     this.cdr.detectChanges();
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSubscription.unsubscribe(); // Unsubscribe to prevent memory leaks
   }
 }

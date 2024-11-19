@@ -1,9 +1,10 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DashboardService } from '../../../core/services/dashboard.service';
 import { PieChartComponent } from '../../../shared/components/chart/pie-chart.component';
 import { CookieService } from 'ngx-cookie-service';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
+import { AutoRefreshService } from '../../../core/services/auto-refresh.service'; // Import AutoRefreshService
 
 @Component({
   selector: 'app-languages-used-chart',
@@ -12,17 +13,20 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./languages-used-chart.component.css'],
   imports: [CommonModule, PieChartComponent]
 })
-export class LanguagesUsedChartComponent implements OnInit {
+export class LanguagesUsedChartComponent implements OnInit, OnDestroy {
   // Data to display in the chart
   public languagesData: any[] = [];
   public chartData: any[] = [];
   public chartLabels: string[] = [];
   public noDataMessage: string | null = null;
 
+  private refreshSubscription: Subscription = new Subscription(); // Subscription for auto-refresh
+
   constructor(
     private dashboardService: DashboardService,
     private cookieService: CookieService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private autoRefreshService: AutoRefreshService // Inject AutoRefreshService
   ) {}
 
   ngOnInit(): void {
@@ -35,7 +39,21 @@ export class LanguagesUsedChartComponent implements OnInit {
       return;
     }
 
-    // Fetch repositories for the user
+    // Fetch initial data
+    this.fetchLanguageData(username);
+
+    // Subscribe to auto-refresh events from AutoRefreshService
+    this.refreshSubscription = this.autoRefreshService.refresh$.subscribe(() => {
+      this.refreshData(username); // Trigger data refresh when auto-refresh event is emitted
+    });
+  }
+
+  private refreshData(username: string): void {
+    // Re-fetch the language data for the user
+    this.fetchLanguageData(username);
+  }
+
+  private fetchLanguageData(username: string): void {
     this.dashboardService.getUserRepos(username).subscribe({
       next: (repos: any[]) => {
         if (!Array.isArray(repos) || repos.length === 0) {
@@ -97,5 +115,9 @@ export class LanguagesUsedChartComponent implements OnInit {
         this.noDataMessage = 'Error fetching repositories data.';
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSubscription.unsubscribe(); // Unsubscribe to prevent memory leaks
   }
 }
