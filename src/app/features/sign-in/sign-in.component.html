@@ -1,12 +1,6 @@
 <div class="sign-in-container">
-  <h1>Sign In</h1>
-  <!-- Default Option: OAuth -->
-  <button class="oauth-button" (click)="signInWithOAuth()">Sign In with GitHub</button>
-  
-  <!-- Advanced Option: PAT -->
-  <div class="pat-login">
-    <h3>Or Sign In with PAT</h3>
-    
+  <h1>Sign In with PAT</h1>
+    <div class="pat-login">
     <form [formGroup]="signInForm" (ngSubmit)="signInWithPAT()">
       <!-- Username input for PAT login -->
       <div class="form-group">
