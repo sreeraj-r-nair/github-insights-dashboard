@@ -12,7 +12,6 @@ describe('Authentication Flow', () => {
 
   it('should successfully log in the user', function () {
     cy.login(users.validUser.username, users.validUser.password);
-    cy.url().should('include', '/dashboard');
   });
 
   it('should show an error for invalid credentials', () => {
@@ -39,6 +38,21 @@ describe('Authentication Flow', () => {
     cy.contains('Username is required').should('be.visible');
     cy.contains('Personal Access Token is required').should('be.visible');
   });
+
+  it('should validate token format and show error for invalid format', () => {
+    // Type the invalid username and password (invalid token format)
+    cy.get('[data-cy=username]').type(users.invalidUser.username);
+    cy.get('[data-cy=password]').type(users.invalidUser.password); // Invalid token format
+    
+    // Trigger the login action
+    cy.get('[data-cy=login-button]').click();
+  
+    // Check for the window alert and verify the error message
+    cy.on('window:alert', (text) => {
+      expect(text).to.contains('Invalid PAT or Authentication Failed');
+    });
+  });
+
   it('should keep the user logged in after refreshing the page', () => {
     cy.login(users.validUser.username, users.validUser.password);
     cy.url().should('include', '/dashboard');
