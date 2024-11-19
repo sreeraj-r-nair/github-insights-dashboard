@@ -5,7 +5,6 @@ import { CookieService } from 'ngx-cookie-service';
 import { BarChartComponent } from '../../../shared/components/chart/bar-chart.component';
 import { forkJoin, Subscription } from 'rxjs';
 import { SharedDataService } from '../../../core/services/shared-data.service';
-import { AuthService } from '../../../core/services/auth.service';
 import { AutoRefreshService } from '../../../core/services/auto-refresh.service';
 
 @Component({
@@ -30,7 +29,6 @@ export class CommitFrequencyChartComponent implements OnInit, OnDestroy {
     private cookieService: CookieService,
     private cdr: ChangeDetectorRef,
     private sharedDataService: SharedDataService,
-    private authService: AuthService,
     private autoRefreshService: AutoRefreshService // Inject the AutoRefreshService
   ) {}
 

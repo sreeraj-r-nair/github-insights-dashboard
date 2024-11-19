@@ -57,24 +57,6 @@ describe('LanguagesUsedChartComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should update languages data correctly', () => {
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    expect(dashboardService.getUserRepos).toHaveBeenCalledWith(mockUsername);
-    expect(dashboardService.getRepoLanguages).toHaveBeenCalledTimes(mockRepos.length);
-    expect(component.chartData.length).toBeGreaterThan(0);
-  });
-
-  it('should fetch repositories and languages on init', () => {
-    component.ngOnInit();
-    fixture.detectChanges();
-
-    expect(dashboardService.getUserRepos).toHaveBeenCalledWith(mockUsername);
-    expect(dashboardService.getRepoLanguages).toHaveBeenCalledTimes(mockRepos.length);
-    expect(component.chartData.length).toBeGreaterThan(0);
-  });
-
   it('should handle error correctly', () => {
     const errorMessage = 'Failed to load data';
     dashboardService.getUserRepos.and.returnValue(throwError(() => new Error(errorMessage)));

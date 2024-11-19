@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormBuilder, Validators, AbstractControl } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 
@@ -19,10 +19,20 @@ export class SignInComponent {
   constructor(private fb: FormBuilder) {
     // Initialize the form group with validation
     this.signInForm = this.fb.group({
-      username: ['', Validators.required],
-      token: ['', Validators.required],
+      username: ['', [Validators.required, this.noSpecialCharactersValidator]],
+      token: ['', [Validators.required, this.noSpecialCharactersValidator]],
     });
   }
+
+// Custom validator to check for special characters
+noSpecialCharactersValidator(control: AbstractControl): { [key: string]: boolean } | null {
+  // Allow alphanumeric characters and hyphen (-)
+  const specialCharPattern = /[^a-zA-Z0-9-]/;
+  if (specialCharPattern.test(control.value)) {
+    return { 'specialChars': true };
+  }
+  return null;
+}
 
   // OAuth Login
   signInWithOAuth() {

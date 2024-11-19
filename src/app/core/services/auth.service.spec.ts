@@ -11,7 +11,7 @@ describe('AuthService', () => {
   let cookieService: CookieService;
   let router: Router;
 
-  const mockUser = { login: 'testUser', name: 'Test User', email: 'test@example.com' };
+  const mockUser = { login: 'testUser', name: 'Test User', email: 'test@example.com', avatar_url: 'https://example.com/avatar.png' };
   const mockToken = 'mockGithubToken12345';
 
   beforeEach(() => {

@@ -70,7 +70,7 @@ export interface Commit {
     DatepickerComponent
   ],
   templateUrl: './commit-list.component.html',
-  styleUrls: ['./commit-list.component.scss'],
+  styleUrls: ['./commit-list.component.css'],
 })
 export class CommitListComponent implements OnInit {
   commits = signal<Commit[]>([]);

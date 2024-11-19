@@ -10,7 +10,7 @@ describe('DashboardService', () => {
   let authService: AuthService;
   let httpMock: HttpTestingController;
 
-  const mockUser = { login: 'testUser', name: 'Test User', email: 'test@example.com' };
+  const mockUser = { login: 'testUser', name: 'Test User', email: 'test@example.com', avatar_url: 'https://example.com/avatar.png' };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -38,19 +38,19 @@ describe('DashboardService', () => {
 
   describe('getUserData', () => {
     it('should fetch user data successfully', () => {
+      // Mock the return value of `fetchUserData`
       spyOn(authService, 'fetchUserData').and.returnValue(of(mockUser));
 
       service.getUserData('testUser').subscribe((data) => {
         expect(data).toEqual(mockUser);
       });
 
-      // Simulate successful API response
-      const req = httpMock.expectOne(`https://api.github.com/users/testUser`);
-      expect(req.request.method).toBe('GET');
-      req.flush(mockUser);
+      // Ensure that `fetchUserData` was called
+      expect(authService.fetchUserData).toHaveBeenCalledWith();
     });
 
     it('should handle error when fetching user data fails', () => {
+      // Mock the return value of `fetchUserData` to throw an error
       spyOn(authService, 'fetchUserData').and.returnValue(throwError(() => new Error('Error fetching user data')));
 
       service.getUserData('testUser').subscribe({
@@ -60,10 +60,8 @@ describe('DashboardService', () => {
         }
       });
 
-      // Simulate failed API response
-      const req = httpMock.expectOne(`https://api.github.com/users/testUser`);
-      expect(req.request.method).toBe('GET');
-      req.flush({ message: 'Error fetching user data' }, { status: 500, statusText: 'Internal Server Error' });
+      // Ensure that `fetchUserData` was called
+      expect(authService.fetchUserData).toHaveBeenCalledWith();
     });
   });
 });
