@@ -22,7 +22,7 @@ Cypress.Commands.add('login', (username: string, password: string) => {
   // Type the username and password, then click the login button
   cy.get('[data-cy=username]').type(username);
   cy.get('[data-cy=password]').type(password);
-  cy.get('[data-cy=login-button]').click();
+  cy.get('[data-cy=login-button]', { timeout: 10000 }).should('not.be.disabled').click();
 });
 
 // Implement the custom command to wait for Angular

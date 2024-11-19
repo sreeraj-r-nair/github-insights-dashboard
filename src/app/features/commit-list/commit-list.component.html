@@ -9,6 +9,7 @@
     (input)="searchCommits()" 
     placeholder="Search commits" 
     class="search-input"
+    data-cy="commit-search-bar"
   />
 
 <!-- Date filters for filtering by commit date -->
@@ -36,8 +37,8 @@ label="End Date"
 </div>
 
 <!-- Iterate and display each commit inside a mat-card -->
-<div *ngFor="let commit of filteredCommits()">
-  <mat-card class="commit-card" (click)="openCommitDetails(commit.html_url)">
+<div *ngFor="let commit of filteredCommits(); let i = index">
+  <mat-card class="commit-card" (click)="openCommitDetails(commit.html_url)" [attr.data-cy]="'commit-message-' + i">
 
     <!-- Commit details for each commit -->
     <div class="commit-item">

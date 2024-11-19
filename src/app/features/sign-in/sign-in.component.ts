@@ -20,7 +20,7 @@ export class SignInComponent {
     // Initialize the form group with validation
     this.signInForm = this.fb.group({
       username: ['', [Validators.required, this.noSpecialCharactersValidator]],
-      token: ['', [Validators.required, this.noSpecialCharactersValidator]],
+      token: ['', [Validators.required, this.githubTokenValidator]],
     });
   }
 
@@ -33,6 +33,17 @@ noSpecialCharactersValidator(control: AbstractControl): { [key: string]: boolean
   }
   return null;
 }
+
+  // Custom validator to check for valid GitHub PAT token
+  githubTokenValidator(control: AbstractControl): { [key: string]: boolean } | null {
+    // Allow alphanumeric characters, underscores (_), hyphens (-), and periods (.)
+    const tokenPattern = /^[a-zA-Z0-9-_\.]+$/;
+    if (!tokenPattern.test(control.value)) {
+      return { 'invalidToken': true };
+    }
+    return null;
+  }
+
 
   // OAuth Login
   signInWithOAuth() {
