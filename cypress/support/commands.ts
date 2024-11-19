@@ -16,9 +16,11 @@ declare namespace Cypress {
 
 // Implement the custom command to log in
 Cypress.Commands.add('login', (username: string, password: string) => {
+  cy.visit('/sign-in');
   cy.get('[data-cy=username]').type(username);
   cy.get('[data-cy=password]').type(password);
   cy.get('[data-cy=login-button]').click();
+  cy.url().should('include', '/dashboard');
 });
 
 // Implement the custom command to wait for Angular
