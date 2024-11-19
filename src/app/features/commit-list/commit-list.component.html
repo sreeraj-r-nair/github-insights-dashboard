@@ -1,0 +1,64 @@
+<div class="commit-list">
+  <h2>Commit List</h2>
+
+  <!-- Search bar -->
+  <input 
+    type="text" 
+    [ngModel]="searchTerm()" 
+    (ngModelChange)="searchTerm.set($event)" 
+    (input)="searchCommits()" 
+    placeholder="Search commits" 
+    class="search-input"
+  />
+
+<!-- Date filters for filtering by commit date -->
+<div class="filter-section">
+  <app-datepicker
+  label="Start Date"
+  [(date)]="startDate"
+  (dateChange)="filterCommits()"
+></app-datepicker>
+
+<app-datepicker
+label="End Date"
+[(date)]="endDate"
+(dateChange)="filterCommits()"
+></app-datepicker>
+
+  <!-- Clear button -->
+  <app-button
+  type="button"
+  variant="primary"
+  size="md"
+  (click)="clearDateFilters()"
+  text="Clear Filters"
+></app-button>  
+</div>
+
+<!-- Iterate and display each commit inside a mat-card -->
+<div *ngFor="let commit of filteredCommits()">
+  <mat-card class="commit-card" (click)="openCommitDetails(commit.html_url)">
+
+    <!-- Commit details for each commit -->
+    <div class="commit-item">
+
+      <!-- Avatar and commit details -->
+      <div class="commit-details">
+        <img class="commit-avatar" [src]="commit.author.avatar_url" alt="{{ commit.commit.author.name }}'s avatar">
+
+        <!-- Commit message and commit author info -->
+        <div class="commit-message">
+          <strong>{{ commit.commit.message }}</strong>
+        </div>
+
+        <div class="commit-info">
+          <span class="author-name">{{ commit.commit.author.name }}</span>
+          <span class="time-ago">{{ calculateTimeAgo(commit.commit.author.date) }}</span>
+        </div>
+      </div>
+
+    </div>
+  </mat-card>
+</div>
+
+</div>

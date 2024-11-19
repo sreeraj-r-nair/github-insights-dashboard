@@ -26,6 +26,16 @@ export class DashboardService {
     }).pipe(catchError(this.handleError));
   }
 
+    // Fetch commit lists for a given repository
+    getRepoCommits(owner: string, repo: string): Observable<any> {
+      return this.http.get<any>(`${this.apiUrl}/repos/${owner}/${repo}/commits`, {
+        headers: this.getAuthHeaders(),
+      }).pipe(
+        map((response) => response),
+        catchError(this.handleError)
+      );
+    }
+
   // Fetch commit activity for a given repository
   getRepoCommitActivity(owner: string, repo: string): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/repos/${owner}/${repo}/stats/commit_activity`, {

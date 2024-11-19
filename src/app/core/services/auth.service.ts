@@ -10,6 +10,7 @@ export interface GithubUser {
   login: string;
   name: string;
   email: string;
+  avatar_url: string;
 }
 
 @Injectable({
