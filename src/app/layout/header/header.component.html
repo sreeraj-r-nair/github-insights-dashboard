@@ -1,6 +1,14 @@
 <tds-header>
   <tds-header-title>GitHub Insights Dashboard</tds-header-title>
 
+  <tds-header-item>
+    <a routerLink="/dashboard">Dashboard</a>
+  </tds-header-item>
+
+  <tds-header-item>
+    <a routerLink="/commit-list">Commit list</a>
+  </tds-header-item>
+  
   <tds-header-launcher slot="end">
   </tds-header-launcher>
 
@@ -8,7 +16,7 @@
     <tds-header-dropdown slot="end" class="demo-hide demo-xs-show" no-dropdown-icon>
       <img
         slot="icon"
-        src="https://www.svgrepo.com/show/384676/account-avatar-profile-user-6.svg"
+        [src]="authService.getUser()?.avatar_url"
         alt="User menu."
       />
       <tds-header-dropdown-list size="lg">
