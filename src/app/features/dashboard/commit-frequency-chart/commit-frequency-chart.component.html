@@ -5,10 +5,12 @@
   </div>
 
   <div *ngIf="!loading && barChartData.length > 0">
+    <div class="chart-container">
     <app-bar-chart 
       [chartData]="barChartData" 
       [chartLabels]="chartLabels"
       [chartLabel]="'Commits'">
     </app-bar-chart>
+    </div>
   </div>
 </div>

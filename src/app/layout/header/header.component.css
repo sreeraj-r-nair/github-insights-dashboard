@@ -1,0 +1,19 @@
+@media (max-width: 768px) {
+  .demo-xs-show {
+    display: block;
+  }
+
+  .demo-lg-show {
+    display: none;
+  }
+}
+
+@media (min-width: 769px) {
+  .demo-xs-show {
+    display: none;
+  }
+
+  .demo-lg-show {
+    display: block;
+  }
+}
